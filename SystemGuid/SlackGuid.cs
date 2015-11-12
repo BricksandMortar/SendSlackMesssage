@@ -1,4 +1,4 @@
-﻿namespace com.bricksandmortar.SendSlackMessage.SystemGuid
+﻿namespace com.bricksandmortarstudio.Slack.SystemGuid
 {
     public class Slack
     {

@@ -7,8 +7,8 @@
     <ProjectGuid>{BAA41C4A-3045-443C-8844-C0396310EE79}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>com.bricksandmortar.SendSlackMessage</RootNamespace>
-    <AssemblyName>com.bricksandmortar.SendSlackMessage</AssemblyName>
+    <RootNamespace>com.bricksandmortarstudio.Slack</RootNamespace>
+    <AssemblyName>com.bricksandmortarstudio.Slack</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -40,7 +40,7 @@
     <Reference Include="RestSharp">
       <HintPath>..\Rock\bin\RestSharp.dll</HintPath>
     </Reference>
-    <Reference Include="Rock, Version=1.4.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Rock, Version=1.3.1.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\bricksandmortar.studio.com_Rockit\RockWeb\Bin\Rock.dll</HintPath>
     </Reference>
