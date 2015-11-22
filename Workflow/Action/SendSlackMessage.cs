@@ -38,7 +38,7 @@ namespace com.bricksandmortarstudio.Slack.Workflow.Action
     [Export(typeof(ActionComponent))]
     [ExportMetadata("ComponentName", "Send Slack Message")]
 
-    [DefinedValueField(com.bricksandmortarstudio.Slack.SystemGuid.Slack.SLACK, "Slack Channel Config", "The Slack channel bot that you want to use", true, false, "" , "", 0, "SlackChannelConfig")]
+    [DefinedValueField(com.bricksandmortarstudio.Slack.SystemGuid.Slack.SLACK, "Slack Bot", "The Slack bot that you want to use", true, false, "" , "", 0, "Token")]
     [WorkflowTextOrAttribute("Channel", "Attribute Value", "The #channel or @user or the attribute that contains the #channel or @user that message should be sent to. <span class='tip tip-lava'></span>", false, "", "", 1, "Channel", new string[] { "Rock.Field.Types.TextFieldType" })]
     [WorkflowTextOrAttribute("Message", "Attribute Value", "The text or an attribute that contains the text that should be sent to the channel. <span class='tip tip-lava'></span>", false, "", "", 2, "Message", new string[] { "Rock.Field.Types.TextFieldType" })]
     [WorkflowTextOrAttribute("Bot Name", "Attribute Value", "The name of the bot or an attribute that contains the name of the bot that should be used to message the channel. <span class='tip tip-lava'></span>", false, "", "", 3, "BotName", new string[] { "Rock.Field.Types.TextFieldType" })]
@@ -59,56 +59,56 @@ namespace com.bricksandmortarstudio.Slack.Workflow.Action
             errorMessages = new List<string>();
             var mergeFields = GetMergeFields(action);
 
-            DefinedValueCache slackChannel = null;
-            var slackChannelConfigValue = GetAttributeValue(action, "SlackChannelConfig");
-            var slackChannelGuid = slackChannelConfigValue.AsGuidOrNull();
-            if (slackChannelGuid.HasValue)
+            DefinedValueCache slackBot = null;
+            var slackBotConfig = GetAttributeValue(action, "Token" );
+            var slackBotGuid = slackBotConfig.AsGuidOrNull();
+            if (slackBotGuid.HasValue)
             {
-                slackChannel = DefinedValueCache.Read(slackChannelGuid.Value, rockContext);
+                slackBot = DefinedValueCache.Read(slackBotGuid.Value, rockContext);
             }
 
             //Get the workflow action channel attribute 
-            string slackActionChannel = GetAttributeValue(action, "Channel");
-            var slackActionChannelGuid = slackActionChannel.AsGuidOrNull();
+            string actionChannel = GetAttributeValue(action, "Channel");
+            var slackActionChannelGuid = actionChannel.AsGuidOrNull();
             if (slackActionChannelGuid.HasValue)
             {
                 var slackActionChannelValue = AttributeCache.Read(slackActionChannelGuid.Value, rockContext);
                 if (slackActionChannelValue != null)
                 {
-                        slackActionChannel = slackActionChannelValue.Name;
+                        actionChannel = slackActionChannelValue.Name;
                 }
             }
 
             //Check if a channel has been specified as an attribute, if not default to the specified channel defined type
-            var channel = !string.IsNullOrEmpty(slackActionChannel) ? slackActionChannel : null;
+            var channel = !string.IsNullOrEmpty(actionChannel) ? actionChannel : null;
 
             //Get the workflow action bot name attribute 
-            var slackActionBotName = GetAttributeValue(action,"BotName");
-            var slackActionBotNameGuid = slackActionBotName.AsGuidOrNull();
+            var actionBotName = GetAttributeValue(action,"BotName");
+            var slackActionBotNameGuid = actionBotName.AsGuidOrNull();
             if (slackActionBotNameGuid.HasValue)
             {
                 var slackActionBotNameValue = AttributeCache.Read(slackActionChannelGuid.Value, rockContext);
                 if (slackActionBotNameValue != null)
                 {
-                    slackActionBotName = slackActionBotNameValue.Name;
+                    actionBotName = slackActionBotNameValue.Name;
                 }
             }
 
-            var channelBotName = !string.IsNullOrEmpty(slackActionBotName) ? slackActionBotName : null;
+            var botName = !string.IsNullOrEmpty(actionBotName) ? actionBotName : null;
 
             //Get the workflow action bot icon attribute 
-            var slackActionBotIcon = GetAttributeValue(action, "BotIcon");
-            var slackActionBotIconGuid = slackActionBotIcon.AsGuidOrNull();
+            var actionBotIcon = GetAttributeValue(action, "BotIcon");
+            var slackActionBotIconGuid = actionBotIcon.AsGuidOrNull();
             if (slackActionBotIconGuid.HasValue)
             {
                 var slackActionBotIconValue = AttributeCache.Read(slackActionBotIconGuid.Value, rockContext);
                 if (slackActionBotIconValue != null)
                 {
-                    slackActionBotIcon = slackActionBotIconValue.Name;
+                    actionBotIcon = slackActionBotIconValue.Name;
                 }
             }
             
-            var channelBotIcon = !string.IsNullOrEmpty(slackActionBotIcon) ? slackActionBotIcon : null;
+            var botIcon = !string.IsNullOrEmpty(actionBotIcon) ? actionBotIcon : null;
 
             //Get the workflow message attribute 
             string message = GetAttributeValue(action, "Message");
@@ -126,39 +126,30 @@ namespace com.bricksandmortarstudio.Slack.Workflow.Action
                 }
             }
 
-            //Get the webhook defined value attribute 
-            string webhook = slackChannel.AttributeValues
-                .Values
-                .Where(b => b.AttributeKey == "Webhook")
-                .FirstOrDefault()
-                .Value;
-
-            //Create Slack Payload 
-            SlackMessage slackSend = new SlackMessage();
-            slackSend.text = message;
-            slackSend.username = channelBotName;
-            if (!(channelBotIcon == null) && channelBotIcon.Contains("http"))
-            {
-                slackSend.icon_url = channelBotIcon;
-            }
-            else
-            {
-                slackSend.icon_emoji = channelBotIcon;
-            }
-            slackSend.channel = channel;
-            JsonSerializer jsonSerializer = new JsonSerializer
-            {
-                NullValueHandling = NullValueHandling.Ignore
-            };
-            string payload = JsonConvert.SerializeObject(slackSend);
-
-
             //Send
-            var client = new RestClient(webhook);
+            var client = new RestClient( "https://slack.com/api/chat.postMessage" );
             RestRequest request = new RestRequest(Method.POST);
             request.RequestFormat = DataFormat.Json;
             request.AddHeader("Accept", "application/json");
-            request.AddParameter("payload", payload);
+            request.AddParameter("token", slackBot.AttributeValues
+                .Values
+                .Where( b => b.AttributeKey == "Token" )
+                .FirstOrDefault()
+                .Value);
+            request.AddParameter( "text", message );
+            request.AddParameter( "channel", channel );
+            if ( (botIcon != null && botIcon.Contains( "http" ) )
+            {
+                request.AddParameter( "icon_url", botIcon );
+            }
+            else if ( botIcon != null )
+            {
+                request.AddParameter( "icon_emoji", botIcon );
+            }
+            if (botName != null)
+            {
+                request.AddParameter( "username", botName );
+            }
             var response = client.Execute(request);
 
             return true;
