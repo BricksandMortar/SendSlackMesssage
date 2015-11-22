@@ -31,13 +31,17 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="EntityFramework">
-      <HintPath>..\Rock\RockWeb\Bin\EntityFramework.dll</HintPath>
+      <HintPath>..\RockWeb\Bin\EntityFramework.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>..\Rock\RockWeb\Bin\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\RockWeb\Bin\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="RestSharp">
-      <HintPath>..\Rock\RockWeb\Bin\RestSharp.dll</HintPath>
+      <HintPath>..\RockWeb\Bin\RestSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Rock, Version=1.4.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Visual Studio 2015\Projects\bricksandmortar.studio.com_Rockit\RockWeb\Bin\Rock.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
@@ -50,6 +54,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Migrations\001_SlackWebHook.cs" />
+    <Compile Include="Migrations\002_SlackBotUser.cs" />
     <Compile Include="Model\Field.cs" />
     <Compile Include="Model\Group.cs" />
     <Compile Include="Model\Attachment.cs" />
@@ -57,12 +62,6 @@
     <Compile Include="SystemGuid\SlackGuid.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Workflow\Action\SendSlackMessage.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Rock\Rock\Rock.csproj">
-      <Project>{8f8c2a79-24f4-4157-8b99-45f75fa85799}</Project>
-      <Name>Rock</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

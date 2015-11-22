@@ -59,56 +59,49 @@ namespace com.bricksandmortarstudio.Slack.Workflow.Action
             errorMessages = new List<string>();
             var mergeFields = GetMergeFields(action);
 
-            DefinedValueCache slackBot = null;
-            var slackBotConfig = GetAttributeValue(action, "Token" );
-            var slackBotGuid = slackBotConfig.AsGuidOrNull();
-            if (slackBotGuid.HasValue)
+            DefinedValueCache bot = null;
+            var botDefinedValue = GetAttributeValue(action, "Token" );
+            var botGuid = botDefinedValue.AsGuidOrNull();
+            if (botGuid.HasValue)
             {
-                slackBot = DefinedValueCache.Read(slackBotGuid.Value, rockContext);
+                bot = DefinedValueCache.Read(botGuid.Value, rockContext);
             }
 
             //Get the workflow action channel attribute 
-            string actionChannel = GetAttributeValue(action, "Channel");
-            var slackActionChannelGuid = actionChannel.AsGuidOrNull();
-            if (slackActionChannelGuid.HasValue)
+            string channel = GetAttributeValue(action, "Channel");
+            var channelGuid = channel.AsGuidOrNull();
+            if (channelGuid.HasValue)
             {
-                var slackActionChannelValue = AttributeCache.Read(slackActionChannelGuid.Value, rockContext);
-                if (slackActionChannelValue != null)
+                var channelValue = AttributeCache.Read(channelGuid.Value, rockContext);
+                if (channelValue != null)
                 {
-                        actionChannel = slackActionChannelValue.Name;
+                        channel = channelValue.Name;
                 }
             }
-
-            //Check if a channel has been specified as an attribute, if not default to the specified channel defined type
-            var channel = !string.IsNullOrEmpty(actionChannel) ? actionChannel : null;
 
             //Get the workflow action bot name attribute 
-            var actionBotName = GetAttributeValue(action,"BotName");
-            var slackActionBotNameGuid = actionBotName.AsGuidOrNull();
-            if (slackActionBotNameGuid.HasValue)
+            var botName = GetAttributeValue(action,"BotName");
+            var botNameGuid = botName.AsGuidOrNull();
+            if (botNameGuid.HasValue)
             {
-                var slackActionBotNameValue = AttributeCache.Read(slackActionChannelGuid.Value, rockContext);
-                if (slackActionBotNameValue != null)
+                var botNameValue = AttributeCache.Read( botNameGuid.Value, rockContext);
+                if (botNameValue != null)
                 {
-                    actionBotName = slackActionBotNameValue.Name;
+                    botName = botNameValue.Name;
                 }
             }
-
-            var botName = !string.IsNullOrEmpty(actionBotName) ? actionBotName : null;
 
             //Get the workflow action bot icon attribute 
-            var actionBotIcon = GetAttributeValue(action, "BotIcon");
-            var slackActionBotIconGuid = actionBotIcon.AsGuidOrNull();
-            if (slackActionBotIconGuid.HasValue)
+            var botIcon = GetAttributeValue(action, "BotIcon");
+            var botIconGuid = botIcon.AsGuidOrNull();
+            if (botIconGuid.HasValue)
             {
-                var slackActionBotIconValue = AttributeCache.Read(slackActionBotIconGuid.Value, rockContext);
-                if (slackActionBotIconValue != null)
+                var botIconValue = AttributeCache.Read(botIconGuid.Value, rockContext);
+                if (botIconValue != null)
                 {
-                    actionBotIcon = slackActionBotIconValue.Name;
+                    botIcon = botIconValue.Name;
                 }
             }
-            
-            var botIcon = !string.IsNullOrEmpty(actionBotIcon) ? actionBotIcon : null;
 
             //Get the workflow message attribute 
             string message = GetAttributeValue(action, "Message");
@@ -131,14 +124,14 @@ namespace com.bricksandmortarstudio.Slack.Workflow.Action
             RestRequest request = new RestRequest(Method.POST);
             request.RequestFormat = DataFormat.Json;
             request.AddHeader("Accept", "application/json");
-            request.AddParameter("token", slackBot.AttributeValues
+            request.AddParameter("token", bot.AttributeValues
                 .Values
                 .Where( b => b.AttributeKey == "Token" )
                 .FirstOrDefault()
                 .Value);
             request.AddParameter( "text", message );
             request.AddParameter( "channel", channel );
-            if ( (botIcon != null && botIcon.Contains( "http" ) )
+            if ( (botIcon != null && botIcon.Contains( "http" ) ))
             {
                 request.AddParameter( "icon_url", botIcon );
             }
@@ -153,63 +146,6 @@ namespace com.bricksandmortarstudio.Slack.Workflow.Action
             var response = client.Execute(request);
 
             return true;
-
-        }
-
-        public class SlackMessage
-        {
-            public string text { get; set; }
-            public string username { get; set; }
-            public string icon_url { get; set; }
-            public string icon_emoji { get; set; }
-            public string channel { get; set; }
-
-            public bool ShouldSerializeusername()
-            {
-                if (string.IsNullOrEmpty(username))
-                {
-                    return false;
-                }
-                else
-                {
-                    return true;
-                }
-            }
-
-            public bool ShouldSerializeicon_url(){
-                if (string.IsNullOrEmpty(icon_url))
-                {
-                    return false;
-                }
-                else
-                {
-                    return true;
-                }
-            }
-
-            public bool ShouldSerializeicon_emoji()
-            {
-                if (string.IsNullOrEmpty(icon_emoji))
-                {
-                    return false;
-                }
-                else
-                {
-                    return true;
-                }
-            }
-
-            public bool ShouldSerializechannel()
-            {
-                if (string.IsNullOrEmpty(channel))
-                {
-                    return false;
-                }
-                else
-                {
-                    return true;
-                }
-            }
 
         }
     }

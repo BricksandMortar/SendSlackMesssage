@@ -8,7 +8,8 @@ using Rock.Plugin;
 
 namespace com.bricksandmortarstudio.Slack.Migrations
 {
-    class _002_SlackBotUser : Migration
+    [MigrationNumber( 2, "1.3.0" )]
+    class SlackBotUser : Migration
     {
         public override void Up()
         {
