@@ -30,22 +30,30 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="EntityFramework">
-      <HintPath>..\RockWeb\Bin\EntityFramework.dll</HintPath>
+    <Reference Include="DotLiquid, Version=1.0.0.0, Culture=neutral, PublicKeyToken=82e46016ecf9f07c, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Documents\Visual Studio 2015\Projects\bricksandmortarstudio.com_Rockit\RockWeb\Bin\DotLiquid.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\RockWeb\Bin\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Documents\Visual Studio 2015\Projects\bricksandmortarstudio.com_Rockit\RockWeb\Bin\EntityFramework.dll</HintPath>
     </Reference>
-    <Reference Include="RestSharp">
-      <HintPath>..\RockWeb\Bin\RestSharp.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Documents\Visual Studio 2015\Projects\bricksandmortarstudio.com_Rockit\RockWeb\Bin\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="RestSharp, Version=105.0.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Documents\Visual Studio 2015\Projects\bricksandmortarstudio.com_Rockit\RockWeb\Bin\RestSharp.dll</HintPath>
     </Reference>
     <Reference Include="Rock, Version=1.4.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Visual Studio 2015\Projects\bricksandmortar.studio.com_Rockit\RockWeb\Bin\Rock.dll</HintPath>
+      <HintPath>..\..\Documents\Visual Studio 2015\Projects\bricksandmortarstudio.com_Rockit\RockWeb\Bin\Rock.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Web" />
     <Reference Include="System.Web.Entity" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="Microsoft.CSharp" />
@@ -53,6 +61,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Authentication\Slack.cs" />
     <Compile Include="Migrations\001_SlackWebHook.cs" />
     <Compile Include="Migrations\002_SlackBotUser.cs" />
     <Compile Include="Model\Field.cs" />

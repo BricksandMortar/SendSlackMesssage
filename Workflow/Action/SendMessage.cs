@@ -38,13 +38,13 @@ namespace com.bricksandmortarstudio.Slack.Workflow.Action
     [Export(typeof(ActionComponent))]
     [ExportMetadata("ComponentName", "Send Slack Message")]
 
-    [DefinedValueField(com.bricksandmortarstudio.Slack.SystemGuid.Slack.SLACK, "Slack Bot", "The Slack bot that you want to use", true, false, "" , "", 0, "Token")]
+    [DefinedValueField(com.bricksandmortarstudio.Slack.SystemGuid.Slack.SLACK_BOTUSERS_DEFINEDTYPE, "Slack Bot", "The Slack bot that you want to use", true, false, "" , "", 0, "Token")]
     [WorkflowTextOrAttribute("Channel", "Attribute Value", "The #channel or @user or the attribute that contains the #channel or @user that message should be sent to. <span class='tip tip-lava'></span>", false, "", "", 1, "Channel", new string[] { "Rock.Field.Types.TextFieldType" })]
     [WorkflowTextOrAttribute("Message", "Attribute Value", "The text or an attribute that contains the text that should be sent to the channel. <span class='tip tip-lava'></span>", false, "", "", 2, "Message", new string[] { "Rock.Field.Types.TextFieldType" })]
     [WorkflowTextOrAttribute("Bot Name", "Attribute Value", "The name of the bot or an attribute that contains the name of the bot that should be used to message the channel. <span class='tip tip-lava'></span>", false, "", "", 3, "BotName", new string[] { "Rock.Field.Types.TextFieldType" })]
     [WorkflowTextOrAttribute("Bot Icon", "Attribute Value", "The url of an icon or an emoji or an attribute that contains the url of an icon or an emoji that should be used as the Slack icon for the bot. <span class='tip tip-lava'></span>", false, "", "", 4, "BotIcon", new string[] { "Rock.Field.Types.TextFieldType" })]
     
-    public class SendSlackMessage : ActionComponent
+    public class SendMessage : ActionComponent
     {
         /// <summary>
         /// Executes the specified workflow.

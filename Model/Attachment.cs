@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 
 namespace com.bricksandmortarstudio.Slack
 {
+    //https://api.slack.com/docs/attachments
     public class Attachment
     {
         public string fallback { get; set; }
