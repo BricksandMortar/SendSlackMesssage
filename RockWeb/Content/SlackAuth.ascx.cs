@@ -53,7 +53,8 @@ namespace RockWeb.Blocks.Security
     [CodeEditorField( "Prompt Message", "Optional text (HTML) to display above username and password fields.", CodeEditorMode.Html, CodeEditorTheme.Rock, 100, false, @"", "", 8 )]
     public partial class Login : Rock.Web.UI.RockBlock
     {
-        string _state;
+        string state;
+        string teamId;
 
         #region Base Control Methods
 
@@ -71,7 +72,7 @@ namespace RockWeb.Blocks.Security
                 string returnUrl = string.Empty;
                 if ( Authenticate( Request, out userName, out returnUrl ) )
                 {
-                    LoginUser( userName, returnUrl, false );
+                    ReturnUser( userName, returnUrl, false );
                 }
             }
         }
@@ -139,12 +140,8 @@ namespace RockWeb.Blocks.Security
         /// <param name="userName">Name of the user.</param>
         /// <param name="returnUrl">The return URL.</param>
         /// <param name="rememberMe">if set to <c>true</c> [remember me].</param>
-        private void LoginUser( string userName, string returnUrl, bool rememberMe )
+        private void ReturnUser( string userName, string returnUrl, bool rememberMe )
         {
-            UserLoginService.UpdateLastLogin( userName );
-
-            Rock.Security.Authorization.SetAuthCookie( userName, rememberMe, false );
-
             if ( !string.IsNullOrWhiteSpace( returnUrl ) )
             {
                 string redirectUrl = Server.UrlDecode( returnUrl );
@@ -181,11 +178,12 @@ namespace RockWeb.Blocks.Security
         {
             string returnUrl = request.QueryString["returnurl"];
             string redirectUri = GetRedirectUrl( request );
-            _state = HttpUtility.UrlEncode( returnUrl ?? FormsAuthentication.DefaultUrl ) ;
-            return new Uri( string.Format( "https://slack.com/oauth/authorize?&client_id={0}&redirect_uri={1}&state={2}&scope=channels:write groups:write identify admin",
+            state = returnUrl ?? FormsAuthentication.DefaultUrl;
+            teamId = GetAttributeValue( "TeamId" );
+            return new Uri( string.Format( "https://slack.com/oauth/authorize?&client_id={0}&redirect_uri={1}&state={2}&scope=channels:write groups:write users:read identify{3}",
                 GetAttributeValue( "ClientID" ),
                 HttpUtility.UrlEncode( redirectUri ),
-                HttpUtility.UrlEncode( returnUrl ?? FormsAuthentication.DefaultUrl ) ) );
+                HttpUtility.UrlEncode( returnUrl ?? FormsAuthentication.DefaultUrl ), ( !string.IsNullOrEmpty( teamId ) ? "&" + teamId : null ) ) );
         }
 
         /// <summary>
@@ -201,11 +199,10 @@ namespace RockWeb.Blocks.Security
             returnUrl = request.QueryString["State"];
             string redirectUri = GetRedirectUrl( request );
 
-            if ( returnUrl == _state )
+            if ( returnUrl == state )
             {
                 try
                 {
-                    // Get a new OAuth Access Token for the 'code' that was returned from the Google user consent redirect
                     var restClient = new RestClient(
                         string.Format( "https://slack.com/api/oauth.access?client_id={0}&redirect_uri={1}&client_secret={2}&code={3}",
                             GetAttributeValue( "ClientID" ),
@@ -217,7 +214,7 @@ namespace RockWeb.Blocks.Security
 
                     if ( restResponse.StatusCode == HttpStatusCode.OK )
                     {
-                        JObject slackToken = new JObject( restResponse.Content );
+                        JObject slackToken = JObject.Parse( restResponse.Content );
                         string accessToken = slackToken["access_token"].ToStringSafe();
 
                         if (!string.IsNullOrEmpty(accessToken))
@@ -230,7 +227,7 @@ namespace RockWeb.Blocks.Security
                             restResponse = restClient.Execute( restRequest );
                             if (restResponse.StatusCode == HttpStatusCode.OK)
                             {
-                                JObject slackUser = new JObject( restResponse.Content );
+                                JObject slackUser = JObject.Parse( restResponse.Content );
                                 username = slackUser["user"].ToString();
                                 if ( CurrentPerson != null )
                                 {
@@ -275,4 +272,7 @@ namespace RockWeb.Blocks.Security
         }
         #endregion
     }
+
+    // helpful links
+    //  http://blog.prabir.me/post/Facebook-CSharp-SDK-Writing-your-first-Facebook-Application.aspx
 }
