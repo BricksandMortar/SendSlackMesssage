@@ -53,8 +53,6 @@ namespace RockWeb.Blocks.Security
     [CodeEditorField( "Prompt Message", "Optional text (HTML) to display above username and password fields.", CodeEditorMode.Html, CodeEditorTheme.Rock, 100, false, @"", "", 8 )]
     public partial class Login : Rock.Web.UI.RockBlock
     {
-        string state;
-        string teamId;
 
         #region Base Control Methods
 
@@ -65,16 +63,6 @@ namespace RockWeb.Blocks.Security
         protected override void OnInit( EventArgs e )
         {
             base.OnInit( e );
-
-            if ( !IsPostBack && IsReturningFromAuthentication( Request ) )
-            {
-                string userName = string.Empty;
-                string returnUrl = string.Empty;
-                if ( Authenticate( Request, out userName, out returnUrl ) )
-                {
-                    ReturnUser( userName, returnUrl, false );
-                }
-            }
         }
 
         /// <summary>
@@ -84,8 +72,17 @@ namespace RockWeb.Blocks.Security
         protected override void OnLoad( EventArgs e )
         {
             base.OnLoad( e );
+            if ( !IsPostBack && IsReturningFromAuthentication( Request ) )
+            {
+                string userName = string.Empty;
+                string returnUrl = string.Empty;
+                if ( Authenticate( Request, out userName, out returnUrl ) )
+                {
+                    ReturnUser( userName, returnUrl, false );
+                }
+            }
 
-            if ( !Page.IsPostBack )
+            else if ( !Page.IsPostBack )
             {
                 lPromptMessage.Text = GetAttributeValue( "PromptMessage" );
             }
@@ -178,8 +175,9 @@ namespace RockWeb.Blocks.Security
         {
             string returnUrl = request.QueryString["returnurl"];
             string redirectUri = GetRedirectUrl( request );
-            state = returnUrl ?? FormsAuthentication.DefaultUrl;
-            teamId = GetAttributeValue( "TeamId" );
+            string state = returnUrl ?? FormsAuthentication.DefaultUrl;
+            string teamId = GetAttributeValue( "TeamId" );
+            ViewState.Add( "state", state );
             return new Uri( string.Format( "https://slack.com/oauth/authorize?&client_id={0}&redirect_uri={1}&state={2}&scope=channels:write groups:write users:read identify{3}",
                 GetAttributeValue( "ClientID" ),
                 HttpUtility.UrlEncode( redirectUri ),
@@ -198,6 +196,7 @@ namespace RockWeb.Blocks.Security
             username = string.Empty;
             returnUrl = request.QueryString["State"];
             string redirectUri = GetRedirectUrl( request );
+            string state = ViewState["state"].ToStringSafe();
 
             if ( returnUrl == state )
             {
