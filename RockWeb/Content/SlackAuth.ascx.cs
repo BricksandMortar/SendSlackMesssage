@@ -177,7 +177,7 @@ namespace RockWeb.Blocks.Security
             string redirectUri = GetRedirectUrl( request );
             string state = returnUrl ?? FormsAuthentication.DefaultUrl;
             string teamId = GetAttributeValue( "TeamId" );
-            ViewState.Add( "state", state );
+            Session.Add( "state", state );
             return new Uri( string.Format( "https://slack.com/oauth/authorize?&client_id={0}&redirect_uri={1}&state={2}&scope=channels:write groups:write users:read identify{3}",
                 GetAttributeValue( "ClientID" ),
                 HttpUtility.UrlEncode( redirectUri ),
@@ -196,7 +196,8 @@ namespace RockWeb.Blocks.Security
             username = string.Empty;
             returnUrl = request.QueryString["State"];
             string redirectUri = GetRedirectUrl( request );
-            string state = ViewState["state"].ToStringSafe();
+            string state = Session["state"].ToStringSafe();
+            Session.Remove( state );
 
             if ( returnUrl == state )
             {
