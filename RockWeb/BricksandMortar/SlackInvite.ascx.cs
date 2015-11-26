@@ -41,7 +41,7 @@ namespace RockWeb.Plugins.com_bricksAndMortarStudio.Cms
     [Description( "Block that allows guests to quickly sign-up for a Slack community." )]
 
     [TextField( "Site Address", "The address for your site (e.g. rockrms.slack.com)", true, order: 0 )]
-    [TextField( "Token", "The Slack API token to use for the call. You can retrieve your token from https://api.slack.com/.", true, order: 1 )]
+    [DefinedValueField(com.bricksandmortarstudio.Slack.SystemGuid.Slack.SLACK_FULL_ACCESS_TOKEN, "Token", "The Slack API token to use for the call.", true, order: 1 )]
     [TextField( "Button Text", "The button text.", true, "Get My Invite", order: 2 )]
     [CodeEditorField( "Success Message", "The message to display when successful.", CodeEditorMode.Liquid, CodeEditorTheme.Rock, 200, true, @"<div class='alert alert-success margin-t-sm'>Awesome... Your invite has been emailed to you.</div>", order: 3 )]
     [CodeEditorField( "Invited Already Message", "The message to display when successful.", CodeEditorMode.Liquid, CodeEditorTheme.Rock, 200, true, @"<div class='alert alert-warning margin-t-sm'>An invite to this team has already been sent to this address, Slack doesn't support sending another invite.</div>", order: 4 )]
