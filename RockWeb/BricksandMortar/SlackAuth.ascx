@@ -1,4 +1,4 @@
-<%@ Control Language="C#" AutoEventWireup="true" CodeFile="SlackAuth.ascx.cs" Inherits="RockWeb.Blocks.Security.Login" %>
+<%@ Control Language="C#" AutoEventWireup="true" CodeFile="SlackAuth.ascx.cs" Inherits="com.bricksandmortarstudio.Slack.OAuthLogin" %>
 
     <asp:Panel ID="pnlLogin" runat="server">
             <div class="row">

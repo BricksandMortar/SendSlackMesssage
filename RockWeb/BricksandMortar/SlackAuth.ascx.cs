@@ -18,40 +18,36 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Net;
-using System.Web;
-using System.Web.Security;
 using System.Web.UI;
-using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using RestSharp;
 using Rock;
 using Rock.Attribute;
-using Rock.Communication;
 using Rock.Data;
 using Rock.Model;
-using Rock.Security;
 using Rock.Web.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
+using System.Web;
+using System.Web.Security;
+using Newtonsoft.Json.Linq;
+using RestSharp;
+using System.Net;
 
-namespace RockWeb.Blocks.Security
+namespace com.bricksandmortarstudio.Slack
 {
     /// <summary>
     /// Prompts user for login credentials.
     /// </summary>
-    [DisplayName( "Login" )]
-    [Category( "Security" )]
-    [Description( "Prompts user for login credentials." )]
+    [DisplayName( "Slack Verification" )]
+    [Category( "Bricks and Mortar > Security" )]
+    [Description( "Prompts a user for Slack login credentials." )]
 
-    [TextField( "Client ID", "The Google Client ID" )]
-    [TextField( "Client Secret", "The Google Client Secret" )]
+    [TextField( "Client ID", "The Slack Client ID" )]
+    [TextField( "Client Secret", "The Slack Client Secret" )]
     [TextField( "Team ID", "Your Team ID" )]
     [LinkedPage( "Help Page", "Page to navigate to when user selects 'Help' option (if blank will use 'ForgotUserName' page route)", true, "", "", 1 )]
     [CodeEditorField( "Prompt Message", "Optional text (HTML) to display above username and password fields.", CodeEditorMode.Html, CodeEditorTheme.Rock, 100, false, @"", "", 8 )]
-    public partial class Login : Rock.Web.UI.RockBlock
+    public partial class OAuthLogin : Rock.Web.UI.RockBlock
     {
 
         #region Base Control Methods
@@ -84,7 +80,7 @@ namespace RockWeb.Blocks.Security
 
             else if ( !Page.IsPostBack )
             {
-                lPromptMessage.Text = GetAttributeValue( "PromptMessage" );
+               lPromptMessage.Text = GetAttributeValue( "PromptMessage" );
             }
 
             pnlMessage.Visible = false;
@@ -272,7 +268,5 @@ namespace RockWeb.Blocks.Security
         }
         #endregion
     }
-
-    // helpful links
-    //  http://blog.prabir.me/post/Facebook-CSharp-SDK-Writing-your-first-Facebook-Application.aspx
+    
 }

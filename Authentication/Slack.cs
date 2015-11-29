@@ -236,7 +236,7 @@ namespace com.bricksandmortarstudio.Slack.Authentication
             SlackUserResponse slackUserResponse = JsonConvert.DeserializeObject<SlackUserResponse>( restResponse.Content );
             SlackUser slackUser = slackUserResponse.user;
 
-            string userName = "Slack_" + slackUser.name;
+            username = "Slack_" + slackUser.name + "_" + userId;
             UserLogin user = null;
 
 
@@ -246,7 +246,7 @@ namespace com.bricksandmortarstudio.Slack.Authentication
 
                 // Query for an existing user 
                 var userLoginService = new UserLoginService( rockContext );
-                user = userLoginService.GetByUserName( userName );
+                user = userLoginService.GetByUserName( username );
 
                 // If no user was found, see if we can find a match in the person table
                 if ( user == null && ( teamId == null || slackUser.team_id.Equals( teamId ) ) )
@@ -299,7 +299,7 @@ namespace com.bricksandmortarstudio.Slack.Authentication
                         if ( person != null )
                         {
                             int typeId = EntityTypeCache.Read( typeof( Slack ) ).Id;
-                            user = UserLoginService.Create( rockContext, person, AuthenticationServiceType.External, typeId, "Slack_" + username, accessToken, true );
+                            user = UserLoginService.Create( rockContext, person, AuthenticationServiceType.External, typeId, username, accessToken, true );
                         }
 
                     } );
