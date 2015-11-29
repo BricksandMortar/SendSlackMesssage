@@ -1,36 +1,24 @@
-﻿using Newtonsoft.Json;
+﻿using System.Collections.Generic;
+using Newtonsoft.Json;
+
+using com.bricksandmortarstudio.Slack.Model.Channel;
 
 namespace com.bricksandmortarstudio.Slack
 {
     public class Group
     {
-        [JsonProperty( PropertyName = "Channel" )]
+        public string id { get; set; }
         public string name { get; set; }
-        public string purpose { get; set; }
-        public string topic { get; set; }
-
-        public bool ShouldSerializepurpose()
-        {
-            if ( string.IsNullOrEmpty( purpose ) )
-            {
-                return false;
-            }
-            else
-            {
-                return true;
-            }
-        }
-
-        public bool ShouldSerializtopic()
-        {
-            if ( string.IsNullOrEmpty( topic ) )
-            {
-                return false;
-            }
-            else
-            {
-                return true;
-            }
-        }
+        public string is_group { get; set; }
+        public int created { get; set; }
+        public string creator { get; set; }
+        public bool is_archived { get; set; }
+        public bool is_mpim { get; set; }
+        public List<string> members { get; set; }
+        public Topic topic { get; set; }
+        public Purpose purpose { get; set; }
+        public string last_read { get; set; }
+        public int unread_count { get; set; }
+        public int unread_count_display { get; set; }
     }
 }

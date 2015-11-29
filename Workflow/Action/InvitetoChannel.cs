@@ -28,6 +28,8 @@ using Rock.Model;
 using Rock.Web.Cache;
 using RestSharp;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System.Net;
 
 namespace com.bricksandmortarstudio.Slack.Workflow.Action
 {
@@ -121,10 +123,23 @@ namespace com.bricksandmortarstudio.Slack.Workflow.Action
                 var channelValue = AttributeCache.Read( channelGuid.Value, rockContext );
                 if ( channelValue != null )
                 {
-                    if (!channel.Where( x => Char.IsDigit( x ) ).Any())
+                    if (!channel.Any( char.IsDigit ))
                     {
                         channel = channelValue.Name;
                         channel = channel.Replace( "#", "" );
+                        var channelClient = new RestClient( "https://slack.com/api/channels.list" );
+                        var channelRequest = new RestRequest( Method.POST );
+                        channelRequest.RequestFormat = DataFormat.Json;
+                        channelRequest.AddHeader( "Accept", "application/json" );
+                        channelRequest.AddParameter( "token", token );
+                        channelRequest.AddParameter( "exclude_archived", 1 );
+                        var channelResponse = channelClient.Execute( channelRequest );
+                        if (channelResponse.StatusCode == HttpStatusCode.OK)
+                            //Fix
+                        {
+                            JObject channels = JObject.Parse( channelResponse.Content);
+                            string channelCode = ( JArray ) channels["channels"].Where(;
+                        }
                     }
                 }
             }
@@ -143,13 +158,13 @@ namespace com.bricksandmortarstudio.Slack.Workflow.Action
 
             //Send
             var client = new RestClient( "https://slack.com/api/channels.invite" );
-            RestRequest request = new RestRequest( Method.POST );
+            var request = new RestRequest( Method.POST );
             request.RequestFormat = DataFormat.Json;
             request.AddHeader( "Accept", "application/json" );
             request.AddParameter( "token", token );
             request.AddParameter( "channel", channel );
             request.AddParameter( "user", user );
-
+            var response = client.Execute( request );
             return true;
 
         }
