@@ -70,6 +70,7 @@
     <Compile Include="Model\Message.cs" />
     <Compile Include="SystemGuid\SlackGuid.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Workflow\Action\InvitetoChannel.cs" />
     <Compile Include="Workflow\Action\SendMessage.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

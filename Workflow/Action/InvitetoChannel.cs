@@ -61,25 +61,25 @@ namespace com.bricksandmortarstudio.Slack.Workflow.Action
 
             //Get token from inviter or default
             string token = String.Empty;
-            var guidPersonAttribute = GetAttributeValue( action, "Inviter" ).AsGuidOrNull();
-            if ( guidPersonAttribute.HasValue )
+            var guidInviterAttribute = GetAttributeValue( action, "Inviter" ).AsGuidOrNull();
+            if ( guidInviterAttribute.HasValue )
             {
-                var attributePerson = AttributeCache.Read( guidPersonAttribute.Value, rockContext );
-                if ( attributePerson != null )
+                var attributeInvinter = AttributeCache.Read( guidInviterAttribute.Value, rockContext );
+                if ( attributeInvinter != null )
                 {
-                    string attributePersonValue = action.GetWorklowAttributeValue( guidPersonAttribute.Value );
-                    if ( !string.IsNullOrWhiteSpace( attributePersonValue ) )
+                    string attributeInvinterValue = action.GetWorklowAttributeValue( guidInviterAttribute.Value );
+                    if ( !string.IsNullOrWhiteSpace( attributeInvinterValue ) )
                     {
-                        if ( attributePerson.FieldType.Class == typeof( Rock.Field.Types.PersonFieldType ).FullName )
+                        if ( attributeInvinter.FieldType.Class == typeof( Rock.Field.Types.PersonFieldType ).FullName )
                         {
-                            Guid personAliasGuid = attributePersonValue.AsGuid();
-                            if ( !personAliasGuid.IsEmpty() )
+                            Guid inviterAliasGuid = attributeInvinterValue.AsGuid();
+                            if ( !inviterAliasGuid.IsEmpty() )
                             {
-                                Person inviter = new PersonAliasService( rockContext ).Queryable()
-                                    .Where( a => a.Guid.Equals( personAliasGuid ) )
+                                token = new PersonAliasService( rockContext ).Queryable()
+                                    .Where( a => a.Guid.Equals( inviterAliasGuid ) )
                                     .Select( a => a.Person )
-                                    .FirstOrDefault();
-                                token = inviter.Users
+                                    .FirstOrDefault()
+                                    .Users
                                     .Where( u => u.UserName.Contains( "Slack" ) == true )
                                     .FirstOrDefault()
                                     .Password;
@@ -87,7 +87,7 @@ namespace com.bricksandmortarstudio.Slack.Workflow.Action
                         }
                         else
                         {
-                            errorMessages.Add( "The attribute used to provide the person was not of type 'Person'." );
+                            errorMessages.Add( "The attribute used to provide the inviter was not of type 'Person'." );
                         }
                     }
                 }
@@ -123,9 +123,9 @@ namespace com.bricksandmortarstudio.Slack.Workflow.Action
                 var channelValue = AttributeCache.Read( channelGuid.Value, rockContext );
                 if ( channelValue != null )
                 {
+                    channel = channelValue.Name;
                     if (!channel.Any( char.IsDigit ))
                     {
-                        channel = channelValue.Name;
                         channel = channel.Replace( "#", "" );
                         var channelClient = new RestClient( "https://slack.com/api/channels.list" );
                         var channelRequest = new RestRequest( Method.POST );
@@ -135,26 +135,59 @@ namespace com.bricksandmortarstudio.Slack.Workflow.Action
                         channelRequest.AddParameter( "exclude_archived", 1 );
                         var channelResponse = channelClient.Execute( channelRequest );
                         if (channelResponse.StatusCode == HttpStatusCode.OK)
-                            //Fix
                         {
                             JObject channels = JObject.Parse( channelResponse.Content);
-                            string channelCode = ( JArray ) channels["channels"].Where(;
+                            channel = channels["channels"].Children()
+                                .Where( c => c["name"].ToString() == channel )
+                                .FirstOrDefault()["id"].ToStringSafe();
+                            if ( channel == null)
+                            {
+                                errorMessages.Add( "The specified channel code could not be found." );
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+            string userId = "";
+            //Get the user who is being invited
+            var guidUserAttribute = GetAttributeValue( action, "User" ).AsGuidOrNull();
+            if ( guidUserAttribute.HasValue )
+            {
+                var attributeUser = AttributeCache.Read( guidUserAttribute.Value, rockContext );
+                if ( attributeUser != null )
+                {
+                    string attributeUserValue = action.GetWorklowAttributeValue( guidInviterAttribute.Value );
+                    if ( !string.IsNullOrWhiteSpace( attributeUserValue ) )
+                    {
+                        if ( attributeUser.FieldType.Class == typeof( Rock.Field.Types.PersonFieldType ).FullName )
+                        {
+                            Guid personAliasGuid = attributeUserValue.AsGuid();
+                            if ( !personAliasGuid.IsEmpty() )
+                            {
+                                userId = new PersonAliasService( rockContext ).Queryable()
+                                    .Where( a => a.Guid.Equals( personAliasGuid ) )
+                                    .Select( a => a.Person )
+                                    .FirstOrDefault().Users
+                                     .Where( u => u.UserName.Contains( "Slack" ) == true )
+                                     .FirstOrDefault()
+                                     .UserName;
+                                userId = userId.Substring( userId.LastIndexOf( '_' ) + 1 );
+                            }
+                        }
+                        else
+                        {
+                            errorMessages.Add( "The attribute used to provide the user was not of type 'Person'." );
                         }
                     }
                 }
             }
 
-            //Get the user who is being invited
-            var botName = GetAttributeValue( action, "BotName" );
-            var botNameGuid = botName.AsGuidOrNull();
-            if ( botNameGuid.HasValue )
+            if (string.IsNullOrEmpty(userId))
             {
-                var botNameValue = AttributeCache.Read( botNameGuid.Value, rockContext );
-                if ( botNameValue != null )
-                {
-                    botName = botNameValue.Name;
-                }
+                return false;
             }
+
 
             //Send
             var client = new RestClient( "https://slack.com/api/channels.invite" );
@@ -163,7 +196,7 @@ namespace com.bricksandmortarstudio.Slack.Workflow.Action
             request.AddHeader( "Accept", "application/json" );
             request.AddParameter( "token", token );
             request.AddParameter( "channel", channel );
-            request.AddParameter( "user", user );
+            request.AddParameter( "user", userId );
             var response = client.Execute( request );
             return true;
 

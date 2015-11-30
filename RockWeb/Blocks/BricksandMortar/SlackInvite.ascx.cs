@@ -37,7 +37,7 @@ namespace RockWeb.Plugins.com_bricksAndMortarStudio.Cms
     /// Block that syncs selected people to an exchange server.
     /// </summary>
     [DisplayName( "Slack Invite" )]
-    [Category( "Bricks and Mortar > CMS" )]
+    [Category( "Bricks and Mortar" )]
     [Description( "Block that allows guests to quickly sign-up for a Slack community." )]
 
     [TextField( "Site Address", "The address for your site (e.g. rockrms.slack.com)", true, order: 0 )]

@@ -39,7 +39,7 @@ namespace com.bricksandmortarstudio.Slack
     /// Prompts user for login credentials.
     /// </summary>
     [DisplayName( "Slack Verification" )]
-    [Category( "Bricks and Mortar > Security" )]
+    [Category( "Bricks and Mortar" )]
     [Description( "Prompts a user for Slack login credentials." )]
 
     [TextField( "Client ID", "The Slack Client ID" )]
