@@ -1,4 +1,5 @@
 ﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="SlackInvite.ascx.cs" Inherits="RockWeb.Plugins.com_bricksAndMortarStudio.Cms.SlackInvite" %>
+<%@ Register TagPrefix="Rock" Namespace="Rock.Web.UI.Controls" Assembly="Rock" %>
 
 <asp:UpdatePanel ID="upnlContent" runat="server">
     <ContentTemplate>

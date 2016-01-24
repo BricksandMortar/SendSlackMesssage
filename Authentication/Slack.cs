@@ -1,15 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
-using System.Dynamic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Web;
 using System.Web.Security;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using RestSharp;
 using Rock;
@@ -31,8 +29,8 @@ namespace com.bricksandmortarstudio.Slack.Authentication
 
     public class Slack : AuthenticationComponent
     {
-        private static string state;
-        private string teamId;
+        private static string _state;
+        private string _teamId;
 
         /// <summary>
         /// Gets the type of the service.
@@ -40,10 +38,7 @@ namespace com.bricksandmortarstudio.Slack.Authentication
         /// <value>
         /// The type of the service.
         /// </value>
-        public override AuthenticationServiceType ServiceType
-        {
-            get { return AuthenticationServiceType.External; }
-        }
+        public override AuthenticationServiceType ServiceType => AuthenticationServiceType.External;
 
         /// <summary>
         /// Determines if user is directed to another site (i.e. Facebook, Gmail, Twitter, etc) to confirm approval of using
@@ -52,10 +47,7 @@ namespace com.bricksandmortarstudio.Slack.Authentication
         /// <value>
         /// The requires remote authentication.
         /// </value>
-        public override bool RequiresRemoteAuthentication
-        {
-            get { return true; }
-        }
+        public override bool RequiresRemoteAuthentication => true;
 
         /// <summary>
         /// Tests the Http Request to determine if authentication should be tested by this
@@ -65,8 +57,8 @@ namespace com.bricksandmortarstudio.Slack.Authentication
         /// <returns></returns>
         public override bool IsReturningFromAuthentication( HttpRequest request )
         {
-            return ( !String.IsNullOrWhiteSpace( request.QueryString["code"] ) &&
-                !String.IsNullOrWhiteSpace( request.QueryString["state"] ) );
+            return !string.IsNullOrWhiteSpace( request.QueryString["code"] ) &&
+                !string.IsNullOrWhiteSpace( request.QueryString["state"]);
         }
 
         /// <summary>
@@ -78,12 +70,10 @@ namespace com.bricksandmortarstudio.Slack.Authentication
         {
             string returnUrl = request.QueryString["returnurl"];
             string redirectUri = GetRedirectUrl( request );
-            state = returnUrl ?? FormsAuthentication.DefaultUrl;
-            teamId = GetAttributeValue( "TeamId" );
-            return new Uri( string.Format( "https://slack.com/oauth/authorize?&client_id={0}&redirect_uri={1}&state={2}&scope=channels:write groups:write users:read identify{3}",
-                GetAttributeValue( "ClientID" ),
-                HttpUtility.UrlEncode( redirectUri ),
-                HttpUtility.UrlEncode( returnUrl ?? FormsAuthentication.DefaultUrl ), (!string.IsNullOrEmpty(teamId) ? "&"+teamId : null ) ));
+            _state = returnUrl ?? FormsAuthentication.DefaultUrl;
+            _teamId = GetAttributeValue( "TeamId" );
+            return new Uri(
+                $"https://slack.com/oauth/authorize?&client_id={GetAttributeValue("ClientID")}&redirect_uri={HttpUtility.UrlEncode(redirectUri)}&state={HttpUtility.UrlEncode(returnUrl ?? FormsAuthentication.DefaultUrl)}&scope=channels:write groups:write users:read identify{(!string.IsNullOrEmpty(_teamId) ? "&" + _teamId : null)}");
         }
 
         /// <summary>
@@ -99,48 +89,45 @@ namespace com.bricksandmortarstudio.Slack.Authentication
             returnUrl = request.QueryString["State"];
             string redirectUri = GetRedirectUrl( request );
 
-            if ( returnUrl == state )
+            if (returnUrl != _state)
             {
-                try
-                {
-                    // Get a new OAuth Access Token for the 'code' that was returned from the Google user consent redirect
-                    var restClient = new RestClient(
-                        string.Format( "https://slack.com/api/oauth.access?client_id={0}&redirect_uri={1}&client_secret={2}&code={3}",
-                            GetAttributeValue( "ClientID" ),
-                            HttpUtility.UrlEncode( redirectUri ),
-                            GetAttributeValue( "ClientSecret" ),
-                            request.QueryString["code"] ) );
-                    var restRequest = new RestRequest( Method.POST );
-                    var restResponse = restClient.Execute( restRequest );
+                return !string.IsNullOrWhiteSpace(username);
+            }
+            try
+            {
+                // Get a new OAuth Access Token for the 'code' that was returned from the Slack user consent redirect
+                var restClient = new RestClient(
+                    $"https://slack.com/api/oauth.access?client_id={GetAttributeValue("ClientID")}&redirect_uri={HttpUtility.UrlEncode(redirectUri)}&client_secret={GetAttributeValue("ClientSecret")}&code={request.QueryString["code"]}");
+                var restRequest = new RestRequest( Method.POST );
+                var restResponse = restClient.Execute( restRequest );
 
-                    if ( restResponse.StatusCode == HttpStatusCode.OK )
+                if ( restResponse.StatusCode == HttpStatusCode.OK )
+                {
+                    var slackToken = JObject.Parse( restResponse.Content );
+                    string accessToken = slackToken["access_token"].ToStringSafe();
+
+                    if ( !string.IsNullOrEmpty( accessToken ) )
                     {
-                        JObject slackToken = JObject.Parse( restResponse.Content );
-                        string accessToken = slackToken["access_token"].ToStringSafe();
+                        restRequest = new RestRequest( Method.GET );
+                        restRequest.AddParameter( "token", accessToken );
+                        restRequest.RequestFormat = DataFormat.Json;
+                        restRequest.AddHeader( "Accept", "application/json" );
+                        restClient = new RestClient( "https://slack.com/api/auth.test" );
+                        restResponse = restClient.Execute( restRequest );
 
-                        if ( !string.IsNullOrEmpty( accessToken ) )
+                        if ( restResponse.StatusCode == HttpStatusCode.OK )
                         {
-                            restRequest = new RestRequest( Method.GET );
-                            restRequest.AddParameter( "token", accessToken );
-                            restRequest.RequestFormat = DataFormat.Json;
-                            restRequest.AddHeader( "Accept", "application/json" );
-                            restClient = new RestClient( "https://slack.com/api/auth.test" );
-                            restResponse = restClient.Execute( restRequest );
-
-                            if ( restResponse.StatusCode == HttpStatusCode.OK )
-                            {
-                                string userID = JObject.Parse( restResponse.Content )["user_id"].ToString();
-                                username = GetSlackUser( userID, accessToken, teamId );
-                            }
+                            string userId = JObject.Parse( restResponse.Content )["user_id"].ToString();
+                            username = GetSlackUser( userId, accessToken, _teamId );
                         }
-
                     }
-                }
 
-                catch ( Exception ex )
-                {
-                    ExceptionLogService.LogException( ex, HttpContext.Current );
                 }
+            }
+
+            catch ( Exception ex )
+            {
+                ExceptionLogService.LogException( ex, HttpContext.Current );
             }
 
             return !string.IsNullOrWhiteSpace( username );
@@ -151,14 +138,14 @@ namespace com.bricksandmortarstudio.Slack.Authentication
         /// </summary>
         /// <returns></returns>
         /// <exception cref="System.NotImplementedException"></exception>
-        public override String ImageUrl()
+        public override string ImageUrl()
         {
             return "";
         }
 
         private string GetRedirectUrl( HttpRequest request )
         {
-            Uri uri = new Uri( request.Url.ToString() );
+            var uri = new Uri( request.Url.ToString() );
             return uri.Scheme + "://" + uri.GetComponents( UriComponents.HostAndPort, UriFormat.UriEscaped ) + uri.LocalPath;
         }
 
@@ -192,13 +179,7 @@ namespace com.bricksandmortarstudio.Slack.Authentication
         /// <value>
         /// <c>true</c> if [supports change password]; otherwise, <c>false</c>.
         /// </value>
-        public override bool SupportsChangePassword
-        {
-            get
-            {
-                return false;
-            }
-        }
+        public override bool SupportsChangePassword => false;
 
         /// <summary>
         /// Changes the password.
@@ -218,13 +199,12 @@ namespace com.bricksandmortarstudio.Slack.Authentication
         /// <summary>
         /// Gets the name of the Google user.
         /// </summary>
-        /// <param name="googleUser">The Google user.</param>
+        /// <param name="userId">The user identifier.</param>
         /// <param name="accessToken">The access token.</param>
+        /// <param name="teamId">The team identifier.</param>
         /// <returns></returns>
         public string GetSlackUser( string userId, string accessToken, string teamId )
         {
-            string username = string.Empty;
-
             var client = new RestClient( "https://slack.com/api/users.info" );
             var request = new RestRequest( Method.POST );
             request.AddParameter( "token", accessToken );
@@ -233,16 +213,15 @@ namespace com.bricksandmortarstudio.Slack.Authentication
             request.AddHeader( "Accept", "application/json" );
             var restResponse = client.Execute( request );
 
-            SlackUserResponse slackUserResponse = JsonConvert.DeserializeObject<SlackUserResponse>( restResponse.Content );
-            SlackUser slackUser = slackUserResponse.user;
+            var slackUserResponse = JsonConvert.DeserializeObject<SlackUserResponse>( restResponse.Content );
+            var slackUser = slackUserResponse.user;
 
-            username = "Slack_" + slackUser.name + "_" + userId;
-            UserLogin user = null;
+            string username = "Slack_" + slackUser.name + "_" + userId;
+            UserLogin user;
 
 
 
-            using ( var rockContext = new RockContext() )
-            {
+            var rockContext = new RockContext();
 
                 // Query for an existing user 
                 var userLoginService = new UserLoginService( rockContext );
@@ -252,12 +231,15 @@ namespace com.bricksandmortarstudio.Slack.Authentication
                 if ( user == null && ( teamId == null || slackUser.team_id.Equals( teamId ) ) )
                 {
                     var profile = slackUser.profile;
-                    // Get name/email from Google login
+                    // Get name/email from Slack login
                     string lastName = profile.last_name;
                     string firstName = profile.first_name;
                     string email = string.Empty;
                     try { email = profile.email; }
-                    catch { }
+                    catch
+                    {
+                        // ignored
+                    }
 
                     Person person = null;
 
@@ -265,94 +247,106 @@ namespace com.bricksandmortarstudio.Slack.Authentication
                     if ( !string.IsNullOrWhiteSpace( email ) )
                     {
                         var personService = new PersonService( rockContext );
-                        var people = personService.GetByMatch( firstName, lastName, email );
-                        if ( people.Count() == 1 )
+                        var people = personService.GetByMatch( firstName, lastName, email ).ToList();
+                        if ( people.Count == 1 )
                         {
                             person = people.First();
                         }
                     }
 
-                    var personRecordTypeId = DefinedValueCache.Read( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_PERSON.AsGuid() ).Id;
-                    var personStatusPending = DefinedValueCache.Read( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_PENDING.AsGuid() ).Id;
-
+                    int personRecordTypeId = DefinedValueCache.Read( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_PERSON.AsGuid() ).Id;
+                    int personStatusPending = DefinedValueCache.Read( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_PENDING.AsGuid() ).Id;
+                
                     rockContext.WrapTransaction( () =>
                     {
                         if ( person == null )
                         {
-                            person = new Person();
-                            person.IsSystem = false;
-                            person.RecordTypeValueId = personRecordTypeId;
-                            person.RecordStatusValueId = personStatusPending;
-                            person.FirstName = firstName;
-                            person.LastName = lastName;
-                            person.Email = email;
-                            person.IsEmailActive = true;
-                            person.EmailPreference = EmailPreference.EmailAllowed;
-                            person.Gender = Gender.Unknown;
+                            person = new Person
+                            {
+                                IsSystem = false,
+                                RecordTypeValueId = personRecordTypeId,
+                                RecordStatusValueId = personStatusPending,
+                                FirstName = firstName,
+                                LastName = lastName,
+                                Email = email,
+                                IsEmailActive = true,
+                                EmailPreference = EmailPreference.EmailAllowed,
+                                Gender = Gender.Unknown
+                            };
 
                             if ( person != null )
                             {
-                                PersonService.SaveNewPerson( person, rockContext, null, false );
+                                PersonService.SaveNewPerson( person, rockContext, null );
                             }
                         }
 
-                        if ( person != null )
+                        if (person == null)
                         {
-                            int typeId = EntityTypeCache.Read( typeof( Slack ) ).Id;
-                            user = UserLoginService.Create( rockContext, person, AuthenticationServiceType.External, typeId, username, accessToken, true );
+                            return;
                         }
-
+                        int typeId = EntityTypeCache.Read( typeof( Slack ) ).Id;
+                        // ReSharper disable once AccessToModifiedClosure
+                        user = UserLoginService.Create( rockContext, person, AuthenticationServiceType.External, typeId, username, accessToken, true );
                     } );
                 }
-                if ( user != null )
+            if (user == null)
+            {
+                return username;
+            }
                 {
                     username = user.UserName;
 
-                    if ( user.PersonId.HasValue )
+                    if (!user.PersonId.HasValue)
                     {
-                        var personService = new PersonService( rockContext );
-                        var person = personService.Get( user.PersonId.Value );
-                        if ( person != null && !person.PhotoId.HasValue )
-                        {
-                            string photoUrl = ( !string.IsNullOrEmpty( slackUser.profile.image_512 ) ) ? slackUser.profile.image_512 : ( !string.IsNullOrEmpty( slackUser.profile.image_512 ) ) ? slackUser.profile.image_192 : null;
-                            if ( photoUrl != null )
-                            {
-                                var converter = new ExpandoObjectConverter();
-                                var restClient = new RestClient( photoUrl );
-                                var restRequest = new RestRequest( Method.GET );
-                                restResponse = restClient.Execute( restRequest );
-                                if ( restResponse.StatusCode == HttpStatusCode.OK )
-                                {
-                                    var bytes = restResponse.RawBytes;
-
-                                    // Create and save the image
-                                    BinaryFileType fileType = new BinaryFileTypeService( rockContext ).Get( Rock.SystemGuid.BinaryFiletype.PERSON_IMAGE.AsGuid() );
-                                    if ( fileType != null )
-                                    {
-                                        var binaryFileService = new BinaryFileService( rockContext );
-                                        var binaryFile = new BinaryFile();
-                                        binaryFileService.Add( binaryFile );
-                                        binaryFile.IsTemporary = false;
-                                        binaryFile.BinaryFileType = fileType;
-                                        binaryFile.MimeType = "image/jpeg";
-                                        binaryFile.FileName = user.Person.NickName + user.Person.LastName + ".jpg";
-                                        binaryFile.ContentStream = new MemoryStream( bytes );
-
-                                        rockContext.SaveChanges();
-
-                                        person.PhotoId = binaryFile.Id;
-                                        rockContext.SaveChanges();
-                                    }
-                                }
-                            }
-
-                        }
-
+                        return username;
                     }
+                    var personService = new PersonService( rockContext );
+                    var person = personService.Get( user.PersonId.Value );
+                    if (person == null || person.PhotoId.HasValue)
+                    {
+                        return username;
+                    }
+                    string photoUrl = !string.IsNullOrEmpty( slackUser.profile.image_512 ) ? slackUser.profile.image_512 : !string.IsNullOrEmpty( slackUser.profile.image_192 ) ? slackUser.profile.image_192 : null;
+                    if (photoUrl == null)
+                    {
+                        return username;
+                    }
+                    var restClient = new RestClient( photoUrl );
+                    var restRequest = new RestRequest( Method.GET );
+                    restResponse = restClient.Execute( restRequest );
+                    if (restResponse.StatusCode != HttpStatusCode.OK)
+                    {
+                        return username;
+                    }
+                    var bytes = restResponse.RawBytes;
+
+                    // Create and save the image
+                    var fileType = new BinaryFileTypeService( rockContext ).Get( Rock.SystemGuid.BinaryFiletype.PERSON_IMAGE.AsGuid() );
+                    if (fileType == null)
+                    {
+                        return username;
+                    }
+                    var binaryFileService = new BinaryFileService( rockContext );
+                    var binaryFile = new BinaryFile();
+                    binaryFileService.Add( binaryFile );
+                    binaryFile.IsTemporary = false;
+                    binaryFile.BinaryFileType = fileType;
+                    binaryFile.MimeType = "image/jpeg";
+                    binaryFile.FileName = user.Person.NickName + user.Person.LastName + ".jpg";
+                    binaryFile.ContentStream = new MemoryStream( bytes );
+
+                    rockContext.SaveChanges();
+
+                    person.PhotoId = binaryFile.Id;
+                    rockContext.SaveChanges();
                 }
 
                 return username;
-            }
+        }
+
+        public override void SetPassword( UserLogin user, string password )
+        {
+            throw new NotImplementedException();
         }
     }
 
@@ -360,7 +354,7 @@ namespace com.bricksandmortarstudio.Slack.Authentication
     /// <summary>
     /// Slack User Object
     /// </summary>
-
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
     public class Profile
     {
         public string first_name { get; set; }
@@ -379,6 +373,7 @@ namespace com.bricksandmortarstudio.Slack.Authentication
         public string image_512 { get; set; }
     }
 
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
     public class SlackUser
     {
         public string id { get; set; }
@@ -401,6 +396,7 @@ namespace com.bricksandmortarstudio.Slack.Authentication
         public bool has_2fa { get; set; }
     }
 
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
     public class SlackUserResponse
     {
         public bool ok { get; set; }

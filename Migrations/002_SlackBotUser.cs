@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿using System.Diagnostics.CodeAnalysis;
 using Rock.Plugin;
 
 namespace com.bricksandmortarstudio.Slack.Migrations
 {
     [MigrationNumber( 2, "1.3.0" )]
+    [SuppressMessage("ReSharper", "RedundantArgumentDefaultValue")]
     class SlackBotUser : Migration
     {
         public override void Up()

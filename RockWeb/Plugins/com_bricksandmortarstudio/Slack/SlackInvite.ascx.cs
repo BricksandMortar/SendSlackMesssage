@@ -15,21 +15,11 @@
 // </copyright>
 //
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data.Entity;
-using System.Linq;
-using System.Web.UI;
+using System.Diagnostics.CodeAnalysis;
 using RestSharp;
-
-using Rock;
 using Rock.Attribute;
-using Rock.Data;
-using Rock.Model;
 using Rock.Web.UI.Controls;
-using Rock.Security;
-using Rock.VersionInfo;
-using System.Runtime.Caching;
 
 namespace RockWeb.Plugins.com_bricksAndMortarStudio.Cms
 {
@@ -40,11 +30,11 @@ namespace RockWeb.Plugins.com_bricksAndMortarStudio.Cms
     [Category( "Bricks and Mortar" )]
     [Description( "Block that allows guests to quickly sign-up for a Slack community." )]
 
-    [TextField( "Site Address", "The address for your site (e.g. rockrms.slack.com)", true, order: 0 )]
+    [TextField( "Site Address", "The address for your site (e.g. rockrms.slack.com)")]
     [DefinedValueField(com.bricksandmortarstudio.Slack.SystemGuid.Slack.SLACK_FULL_ACCESS_TOKEN, "Token", "The Slack API token to use for the call.", true, order: 1 )]
     [TextField( "Button Text", "The button text.", true, "Get My Invite", order: 2 )]
-    [CodeEditorField( "Success Message", "The message to display when successful.", CodeEditorMode.Liquid, CodeEditorTheme.Rock, 200, true, @"<div class='alert alert-success margin-t-sm'>Awesome... Your invite has been emailed to you.</div>", order: 3 )]
-    [CodeEditorField( "Invited Already Message", "The message to display when successful.", CodeEditorMode.Liquid, CodeEditorTheme.Rock, 200, true, @"<div class='alert alert-warning margin-t-sm'>An invite to this team has already been sent to this address, Slack doesn't support sending another invite.</div>", order: 4 )]
+    [CodeEditorField( "Success Message", "The message to display when successful.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 200, true, @"<div class='alert alert-success margin-t-sm'>Awesome... Your invite has been emailed to you.</div>", order: 3 )]
+    [CodeEditorField( "Invited Already Message", "The message to display when successful.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 200, true, @"<div class='alert alert-warning margin-t-sm'>An invite to this team has already been sent to this address, Slack doesn't support sending another invite.</div>", order: 4 )]
     public partial class SlackInvite : Rock.Web.UI.RockBlock
     {
         
@@ -59,7 +49,7 @@ namespace RockWeb.Plugins.com_bricksAndMortarStudio.Cms
             base.OnInit( e );
 
             // this event gets fired after block settings are updated. it's nice to repaint the screen if these settings would alter it
-            this.BlockUpdated += Block_BlockUpdated;
+            BlockUpdated += Block_BlockUpdated;
 
             btnInvite.Text = GetAttributeValue( "ButtonText" );
 
@@ -70,15 +60,6 @@ namespace RockWeb.Plugins.com_bricksAndMortarStudio.Cms
             {
                 txtEmail.Text = CurrentPerson.Email;
             }
-        }
-
-        /// <summary>
-        /// Raises the <see cref="E:Load" /> event.
-        /// </summary>
-        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
-        protected override void OnLoad( EventArgs e )
-        {
-            base.OnLoad( e );
         }
 
         #endregion
@@ -174,6 +155,7 @@ namespace RockWeb.Plugins.com_bricksAndMortarStudio.Cms
     /// <summary>
     /// 
     /// </summary>
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
     public class InviteResponse
     {
         /// <summary>

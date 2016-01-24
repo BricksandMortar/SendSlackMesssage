@@ -15,9 +15,7 @@
 // </copyright>
 //
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using Rock;
@@ -25,7 +23,6 @@ using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
-using Rock.Web.UI;
 using Rock.Web.UI.Controls;
 using System.Web;
 using System.Web.Security;
@@ -53,15 +50,6 @@ namespace com.bricksandmortarstudio.Slack
         #region Base Control Methods
 
         /// <summary>
-        /// Raises the <see cref="E:System.Web.UI.Control.Init" /> event.
-        /// </summary>
-        /// <param name="e">An <see cref="T:System.EventArgs" /> object that contains the event data.</param>
-        protected override void OnInit( EventArgs e )
-        {
-            base.OnInit( e );
-        }
-
-        /// <summary>
         /// Raises the <see cref="E:System.Web.UI.Control.Load" /> event.
         /// </summary>
         /// <param name="e">The <see cref="T:System.EventArgs" /> object that contains the event data.</param>
@@ -70,11 +58,11 @@ namespace com.bricksandmortarstudio.Slack
             base.OnLoad( e );
             if ( !IsPostBack && IsReturningFromAuthentication( Request ) )
             {
-                string userName = string.Empty;
-                string returnUrl = string.Empty;
+                string userName;
+                string returnUrl;
                 if ( Authenticate( Request, out userName, out returnUrl ) )
                 {
-                    ReturnUser( userName, returnUrl, false );
+                    ReturnUser(returnUrl );
                 }
             }
 
@@ -98,18 +86,19 @@ namespace com.bricksandmortarstudio.Slack
         /// <exception cref="System.NotImplementedException"></exception>
         protected void lbSlackAuth_Click( object sender, EventArgs e )
         {
-            if ( sender is LinkButton )
+            if (!(sender is LinkButton))
             {
-                LinkButton lb = (LinkButton) sender;
-
-                if ( lb.ID == "lbSlackAuth" )
-                {
-                    Uri uri = GenerateLoginUrl( Request );
-                    Response.Redirect( uri.AbsoluteUri, false );
-                    Context.ApplicationInstance.CompleteRequest();
-                    return;
-                }
+                return;
             }
+            var lb = (LinkButton) sender;
+
+            if (lb.ID != "lbSlackAuth")
+            {
+                return;
+            }
+            var uri = GenerateLoginUrl( Request );
+            Response.Redirect( uri.AbsoluteUri, false );
+            Context.ApplicationInstance.CompleteRequest();
         }
 
         #endregion
@@ -130,15 +119,16 @@ namespace com.bricksandmortarstudio.Slack
         /// <summary>
         /// Logs in the user.
         /// </summary>
-        /// <param name="userName">Name of the user.</param>
         /// <param name="returnUrl">The return URL.</param>
-        /// <param name="rememberMe">if set to <c>true</c> [remember me].</param>
-        private void ReturnUser( string userName, string returnUrl, bool rememberMe )
+        private void ReturnUser(string returnUrl )
         {
             if ( !string.IsNullOrWhiteSpace( returnUrl ) )
             {
                 string redirectUrl = Server.UrlDecode( returnUrl );
-                Response.Redirect( redirectUrl );
+                if (redirectUrl != null)
+                {
+                    Response.Redirect( redirectUrl );
+                }
                 Context.ApplicationInstance.CompleteRequest();
             }
             else
@@ -158,8 +148,8 @@ namespace com.bricksandmortarstudio.Slack
         /// <returns></returns>
         public bool IsReturningFromAuthentication( HttpRequest request )
         {
-            return ( !string.IsNullOrWhiteSpace( request.QueryString["code"] ) &&
-                !string.IsNullOrWhiteSpace( request.QueryString["state"] ) );
+            return !string.IsNullOrWhiteSpace( request.QueryString["code"] ) &&
+                   !string.IsNullOrWhiteSpace( request.QueryString["state"] );
         }
 
         /// <summary>
@@ -177,7 +167,7 @@ namespace com.bricksandmortarstudio.Slack
             return new Uri( string.Format( "https://slack.com/oauth/authorize?&client_id={0}&redirect_uri={1}&state={2}&scope=channels:write groups:write users:read identify{3}",
                 GetAttributeValue( "ClientID" ),
                 HttpUtility.UrlEncode( redirectUri ),
-                HttpUtility.UrlEncode( returnUrl ?? FormsAuthentication.DefaultUrl ), ( !string.IsNullOrEmpty( teamId ) ? "&" + teamId : null ) ) );
+                HttpUtility.UrlEncode( returnUrl ?? FormsAuthentication.DefaultUrl ), !string.IsNullOrEmpty( teamId ) ? "&" + teamId : null ) );
         }
 
         /// <summary>
@@ -187,7 +177,7 @@ namespace com.bricksandmortarstudio.Slack
         /// <param name="username">The username.</param>
         /// <param name="returnUrl">The return URL.</param>
         /// <returns></returns>
-        public Boolean Authenticate( HttpRequest request, out string username, out string returnUrl )
+        public bool Authenticate( HttpRequest request, out string username, out string returnUrl )
         {
             username = string.Empty;
             returnUrl = request.QueryString["State"];
@@ -210,7 +200,7 @@ namespace com.bricksandmortarstudio.Slack
 
                     if ( restResponse.StatusCode == HttpStatusCode.OK )
                     {
-                        JObject slackToken = JObject.Parse( restResponse.Content );
+                        var slackToken = JObject.Parse( restResponse.Content );
                         string accessToken = slackToken["access_token"].ToStringSafe();
 
                         if (!string.IsNullOrEmpty(accessToken))
@@ -223,16 +213,16 @@ namespace com.bricksandmortarstudio.Slack
                             restResponse = restClient.Execute( restRequest );
                             if (restResponse.StatusCode == HttpStatusCode.OK)
                             {
-                                JObject slackUser = JObject.Parse( restResponse.Content );
+                                var slackUser = JObject.Parse( restResponse.Content );
                                 username = slackUser["user"].ToString();
                                 if ( CurrentPerson != null )
                                 {
                                     var userLoginService = new UserLoginService( new RockContext() );
-                                    UserLogin user = userLoginService.GetByUserName( "Slack_" + username );
+                                    var user = userLoginService.GetByUserName( "Slack_" + username );
                                     if (user == null)
                                     {
-                                        int typeId = EntityTypeCache.Read( typeof( com.bricksandmortarstudio.Slack.Authentication.Slack ) ).Id;
-                                        user = UserLoginService.Create( new RockContext(), CurrentPerson, AuthenticationServiceType.External, typeId, "Slack_" + username, accessToken, true );
+                                        int typeId = EntityTypeCache.Read( typeof( com.bricksandmortarstudio.Slack.Authentication.Slack) ).Id;
+                                        UserLoginService.Create( new RockContext(), CurrentPerson, AuthenticationServiceType.External, typeId, "Slack_" + username, accessToken, true );
                                     }
                                     else
                                     {
@@ -263,7 +253,7 @@ namespace com.bricksandmortarstudio.Slack
 
         private string GetRedirectUrl( HttpRequest request )
         {
-            Uri uri = new Uri( request.Url.ToString() );
+            var uri = new Uri( request.Url.ToString() );
             return uri.Scheme + "://" + uri.GetComponents( UriComponents.HostAndPort, UriFormat.UriEscaped ) + uri.LocalPath;
         }
         #endregion
