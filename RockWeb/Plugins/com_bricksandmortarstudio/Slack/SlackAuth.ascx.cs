@@ -29,6 +29,7 @@ using System.Web.Security;
 using Newtonsoft.Json.Linq;
 using RestSharp;
 using System.Net;
+using Rock.Security;
 
 namespace com.bricksandmortarstudio.Slack
 {
@@ -38,14 +39,12 @@ namespace com.bricksandmortarstudio.Slack
     [DisplayName( "Slack Verification" )]
     [Category( "Bricks and Mortar" )]
     [Description( "Prompts a user for Slack login credentials." )]
-
-    [TextField( "Client ID", "The Slack Client ID" )]
-    [TextField( "Client Secret", "The Slack Client Secret" )]
-    [TextField( "Team ID", "Your Team ID" )]
+    
     [LinkedPage( "Help Page", "Page to navigate to when user selects 'Help' option (if blank will use 'ForgotUserName' page route)", true, "", "", 1 )]
     [CodeEditorField( "Prompt Message", "Optional text (HTML) to display above username and password fields.", CodeEditorMode.Html, CodeEditorTheme.Rock, 100, false, @"", "", 8 )]
     public partial class OAuthLogin : Rock.Web.UI.RockBlock
     {
+        private AuthenticationComponent _slackAuth;
 
         #region Base Control Methods
 
@@ -56,22 +55,30 @@ namespace com.bricksandmortarstudio.Slack
         protected override void OnLoad( EventArgs e )
         {
             base.OnLoad( e );
-            if ( !IsPostBack && IsReturningFromAuthentication( Request ) )
+            LoadSlack();
+            if (_slackAuth != null)
             {
-                string userName;
-                string returnUrl;
-                if ( Authenticate( Request, out userName, out returnUrl ) )
+                if (!IsPostBack && IsReturningFromAuthentication(Request))
                 {
-                    ReturnUser(returnUrl );
+                    string userName;
+                    string returnUrl;
+                    if (Authenticate(Request, out userName, out returnUrl))
+                    {
+                        ReturnUser(returnUrl);
+                    }
                 }
-            }
 
-            else if ( !Page.IsPostBack )
+                else if (!Page.IsPostBack)
+                {
+                    lPromptMessage.Text = GetAttributeValue("PromptMessage");
+                }
+
+                pnlMessage.Visible = false;
+            }
+            else
             {
-               lPromptMessage.Text = GetAttributeValue( "PromptMessage" );
+                    DisplayError( "An error occurred loading the Slack authentication component." );
             }
-
-            pnlMessage.Visible = false;
         }
 
         #endregion
@@ -137,6 +144,17 @@ namespace com.bricksandmortarstudio.Slack
             }
         }
 
+        private void LoadSlack()
+        {
+            if (_slackAuth != null)
+            {
+                return;
+            }
+            var slackAuthEntity = EntityTypeCache.Read( "com.bricksandmortarstudio.Slack.Authentication.Slack" );
+           _slackAuth = AuthenticationContainer.GetComponent( slackAuthEntity.Name );
+        }
+
+
         #endregion
 
         #region SlackAuth
@@ -162,10 +180,10 @@ namespace com.bricksandmortarstudio.Slack
             string returnUrl = request.QueryString["returnurl"];
             string redirectUri = GetRedirectUrl( request );
             string state = returnUrl ?? FormsAuthentication.DefaultUrl;
-            string teamId = GetAttributeValue( "TeamId" );
+            string teamId = _slackAuth.GetAttributeValue( "TeamId" );
             Session.Add( "state", state );
             return new Uri( string.Format( "https://slack.com/oauth/authorize?&client_id={0}&redirect_uri={1}&state={2}&scope=channels:write groups:write users:read identify{3}",
-                GetAttributeValue( "ClientID" ),
+                _slackAuth.GetAttributeValue( "ClientID" ),
                 HttpUtility.UrlEncode( redirectUri ),
                 HttpUtility.UrlEncode( returnUrl ?? FormsAuthentication.DefaultUrl ), !string.IsNullOrEmpty( teamId ) ? "&" + teamId : null ) );
         }
@@ -191,9 +209,9 @@ namespace com.bricksandmortarstudio.Slack
                 {
                     var restClient = new RestClient(
                         string.Format( "https://slack.com/api/oauth.access?client_id={0}&redirect_uri={1}&client_secret={2}&code={3}",
-                            GetAttributeValue( "ClientID" ),
+                            _slackAuth.GetAttributeValue( "ClientID" ),
                             HttpUtility.UrlEncode( redirectUri ),
-                            GetAttributeValue( "ClientSecret" ),
+                            _slackAuth.GetAttributeValue( "ClientSecret" ),
                             request.QueryString["code"] ) );
                     var restRequest = new RestRequest( Method.POST );
                     var restResponse = restClient.Execute( restRequest );
@@ -227,7 +245,7 @@ namespace com.bricksandmortarstudio.Slack
                                     else
                                     {
                                         var globalMergeFields = Rock.Web.Cache.GlobalAttributesCache.GetMergeFields( null );
-                                        lPreviouslyCompletedMessage.Text = GetAttributeValue( "PreviouslyCompleted" ).ResolveMergeFields( globalMergeFields );
+                                        lPreviouslyCompletedMessage.Text = "Looks like you're already authenticated";
                                     }
                                     
                                 }
