@@ -9,7 +9,18 @@ download: false
   <!-- each section must contain ONE h1 with an id and optionally a "page-header" class -->
   <h1 id="setup" class="page-header">Setup</h1>
   <!-- you can optionally declare sub-sections with h2/h3 with an id -->
-  <h3 id="{{site.name}}-sub-section">Generic Service</h3>
+  <h2 id="{{site.name}}-sub-section">Generic Service</h2>
+  <h5>Get Your Team ID</h5>
+  <form>
+<div class="form-group">
+  <label for="token">Token</label>
+  <input type="text" class="form-control" id="token" placeholder="aaaa-00000000000-00000000000-00000000000-0a0a0a0a0a">
+</div>
+<button onclick="fetchTeamId()" type="submit" class="btn btn-default">Fetch</button>
+</form>
+<div id="id-container" class="hidden">
+  <p class="text-center" id="teamid"></p>
+</div>
   <p></p>
   <h2 id="rock-sub-section">Rock</h2>
 </section>
@@ -18,3 +29,24 @@ download: false
   <h1 id="developers" class="page-header">Developers</h1>
 <p>The source code for the {{site.name}} is available for use with the <a href="http://www.rockrms.com/Rock/Developer">Rockit SDK</a> is available <a href="https://github.com/{{site.github.user}}/{{site.github.repo}}/releases/latest">here</a></p>.
 </section>
+
+<script>
+function fetchTeamId() {
+  var container = $('#id-container');
+  var url = 'https://slack.com/api/team.info?token='+$("#token").val().replace(/\s+/g, '');
+  $.getJSON(url)
+      .done(function(result, status) {
+            console.log("Done");
+      })
+      .fail(function(result, status) {
+
+            console.log("Fail");
+      })
+      .success(function (result, status) {
+          console.log("Success");
+      })
+      .error(function (result, status) {
+          console.log("Error");
+      });
+    }
+</script>
