@@ -16,7 +16,7 @@ download: false
   <label for="token">Token</label>
   <input type="text" class="form-control" id="token" placeholder="aaaa-00000000000-00000000000-00000000000-0a0a0a0a0a">
 </div>
-<button onclick="fetchTeamId()" type="submit" class="btn btn-default">Fetch</button>
+<button onclick="fetchTeamId(); return false;" type="submit" class="btn btn-default">Fetch</button>
 </form>
 <div id="id-container" class="hidden">
   <p class="text-center" id="teamid"></p>
@@ -34,15 +34,13 @@ download: false
 function fetchTeamId() {
   var container = $('#id-container');
   var url = 'https://slack.com/api/team.info?token='+$("#token").val().replace(/\s+/g, '');
-  var xhr = new XMLHttpRequest();
-xhr.open('GET', encodeURI('url'));
-xhr.onload = function() {
-    if (xhr.status === 200) {
-        console.log("Success");
-    }
-    else {
-        alert('Request failed.  Returned status of ' + xhr.status);
-    }
-};
-xhr.send();
+  $.getJSON( url )
+  .done(function( json ) {
+    console.log( "Team ID: " + json.team.id );
+  })
+  .fail(function( jqxhr, textStatus, error ) {
+    var err = textStatus + ", " + error;
+    console.log( "Request Failed: " + err );
+});
+}
 </script>
