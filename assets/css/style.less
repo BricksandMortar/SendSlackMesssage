@@ -144,6 +144,25 @@ span[data-type="action"] {
   border-color: #f9f9f9;
 }
 
+#id-container {
+  .center-block;
+  margin-top: 1em;
+  p, h1, h2, h3, h4, h5, h6  {
+
+    color: @text-contrast;
+  }
+  background-color: @orange;
+  border-radius: 5px;
+  p {
+    font-size: @font-size-large;
+  }
+  #teamid {
+    text-decoration: underline;
+    font-size: (@font-size-large - 1);
+  }
+}
+
+
 /* Small devices (tablets, 768px and up) */
 @media (min-width: @screen-sm-min) {
   .landing {
@@ -154,6 +173,19 @@ span[data-type="action"] {
       padding-bottom: @padding-xs-vertical;
     }
   }
+
+  .shrink-50 {
+    width: 50%;
+  }
+
+  .shrink-60 {
+    width: 60%;
+  }
+
+
+    .shrink-80 {
+      width: 80%;
+    }
 }
 
 /* Medium devices (desktops, 992px and up) */

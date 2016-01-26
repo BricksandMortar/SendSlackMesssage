@@ -6841,12 +6841,45 @@ span[data-type="action"] {
   background-color: #f9f9f9;
   border-color: #f9f9f9;
 }
+#id-container {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 1em;
+  background-color: #e99f40;
+  border-radius: 5px;
+}
+#id-container p,
+#id-container h1,
+#id-container h2,
+#id-container h3,
+#id-container h4,
+#id-container h5,
+#id-container h6 {
+  color: #ffffff;
+}
+#id-container p {
+  font-size: 18px;
+}
+#id-container #teamid {
+  text-decoration: underline;
+  font-size: 17px;
+}
 /* Small devices (tablets, 768px and up) */
 @media (min-width: 768px) {
   .landing p {
     margin-left: 4em;
     margin-right: 4em;
     padding-bottom: 1px;
+  }
+  .shrink-50 {
+    width: 50%;
+  }
+  .shrink-60 {
+    width: 60%;
+  }
+  .shrink-80 {
+    width: 80%;
   }
 }
 /* Medium devices (desktops, 992px and up) */

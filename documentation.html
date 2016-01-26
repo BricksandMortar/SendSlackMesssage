@@ -11,15 +11,18 @@ download: false
   <!-- you can optionally declare sub-sections with h2/h3 with an id -->
   <h2 id="{{site.name}}-sub-section">Generic Service</h2>
   <h5>Get Your Team ID</h5>
+  <div class="shrink-50" id="fetch-id">
   <form>
 <div class="form-group">
   <label for="token">Token</label>
-  <input type="text" class="form-control" id="token" placeholder="aaaa-00000000000-00000000000-00000000000-0a0a0a0a0a">
+  <input type="text" class="form-control short-form" id="token" placeholder="aaaa-00000000000-00000000000-00000000000-0a0a0a0a0a">
 </div>
-<button onclick="fetchTeamId(); return false;" type="submit" class="btn btn-default">Fetch</button>
+<button onclick="fetchTeamId(); return false;" type="submit" class="btn btn-default center-block">Fetch</button>
 </form>
-<div id="id-container" class="hidden">
+<div id="id-container" class="hidden shrink-80">
+  <strong><p class="text-center">Your Team ID</h6></strong>
   <p class="text-center" id="teamid"></p>
+</div>
 </div>
   <p></p>
   <h2 id="rock-sub-section">Rock</h2>
@@ -29,18 +32,3 @@ download: false
   <h1 id="developers" class="page-header">Developers</h1>
 <p>The source code for the {{site.name}} is available for use with the <a href="http://www.rockrms.com/Rock/Developer">Rockit SDK</a> is available <a href="https://github.com/{{site.github.user}}/{{site.github.repo}}/releases/latest">here</a></p>.
 </section>
-
-<script>
-function fetchTeamId() {
-  var container = $('#id-container');
-  var url = 'https://slack.com/api/team.info?token='+$("#token").val().replace(/\s+/g, '');
-  $.getJSON( url )
-  .done(function( json ) {
-    console.log( "Team ID: " + json.team.id );
-  })
-  .fail(function( jqxhr, textStatus, error ) {
-    var err = textStatus + ", " + error;
-    console.log( "Request Failed: " + err );
-});
-}
-</script>
