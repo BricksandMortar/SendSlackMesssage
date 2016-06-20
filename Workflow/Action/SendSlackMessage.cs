@@ -37,10 +37,11 @@ namespace com.bricksandmortarstudio.Slack.Workflow.Action
     [Description("Sends an Slack message to a specified channel.")]
     [Export(typeof(ActionComponent))]
     [ExportMetadata("ComponentName", "Send Slack Message")]
+    [ActionCategory( "Slack" )]
 
     [DefinedValueField(com.bricksandmortarstudio.Slack.SystemGuid.Slack.SLACK, "Slack Channel Config", "The Slack channel bot that you want to use", true, false, "" , "", 0, "SlackChannelConfig")]
     [WorkflowTextOrAttribute("Channel", "Attribute Value", "The #channel or @user or the attribute that contains the #channel or @user that message should be sent to. <span class='tip tip-lava'></span>", false, "", "", 1, "Channel", new string[] { "Rock.Field.Types.TextFieldType" })]
-    [WorkflowTextOrAttribute("Message", "Attribute Value", "The text or an attribute that contains the text that should be sent to the channel. <span class='tip tip-lava'></span>", false, "", "", 2, "Message", new string[] { "Rock.Field.Types.TextFieldType" })]
+    [WorkflowTextOrAttribute("Message", "Attribute Value", "The text or an attribute that contains the text that should be sent to the channel. <span class='tip tip-lava'></span>", false, "", "", 2, "Message", new string[] { "Rock.Field.Types.TextFieldType", "Rock.Field.Types.MemoFieldType" } )]
     [WorkflowTextOrAttribute("Bot Name", "Attribute Value", "The name of the bot or an attribute that contains the name of the bot that should be used to message the channel. <span class='tip tip-lava'></span>", false, "", "", 3, "BotName", new string[] { "Rock.Field.Types.TextFieldType" })]
     [WorkflowTextOrAttribute("Bot Icon", "Attribute Value", "The url of an icon or an emoji or an attribute that contains the url of an icon or an emoji that should be used as the Slack icon for the bot. <span class='tip tip-lava'></span>", false, "", "", 4, "BotIcon", new string[] { "Rock.Field.Types.TextFieldType" })]
     
@@ -67,63 +68,60 @@ namespace com.bricksandmortarstudio.Slack.Workflow.Action
                 slackChannel = DefinedValueCache.Read(slackChannelGuid.Value, rockContext);
             }
 
-            //Get the workflow action channel attribute 
+            // get the workflow action channel attribute 
             string slackActionChannel = GetAttributeValue(action, "Channel");
             var slackActionChannelGuid = slackActionChannel.AsGuidOrNull();
             if (slackActionChannelGuid.HasValue)
             {
-                var slackActionChannelValue = AttributeCache.Read(slackActionChannelGuid.Value, rockContext);
-                if (slackActionChannelValue != null)
-                {
-                        slackActionChannel = slackActionChannelValue.Name;
-                }
+                slackActionChannel = action.GetWorklowAttributeValue( slackActionChannelGuid.Value );
+            }
+            else
+            {
+                slackActionChannel = slackActionChannel.ResolveMergeFields( GetMergeFields( action ) );
             }
 
-            //Check if a channel has been specified as an attribute, if not default to the specified channel defined type
+            // check if a channel has been specified as an attribute, if not default to the specified channel defined type
             var channel = !string.IsNullOrEmpty(slackActionChannel) ? slackActionChannel : null;
 
-            //Get the workflow action bot name attribute 
+            // get the workflow action bot name attribute 
             var slackActionBotName = GetAttributeValue(action,"BotName");
             var slackActionBotNameGuid = slackActionBotName.AsGuidOrNull();
             if (slackActionBotNameGuid.HasValue)
             {
-                var slackActionBotNameValue = AttributeCache.Read(slackActionChannelGuid.Value, rockContext);
-                if (slackActionBotNameValue != null)
-                {
-                    slackActionBotName = slackActionBotNameValue.Name;
-                }
+                slackActionBotName = action.GetWorklowAttributeValue( slackActionBotNameGuid.Value );
+            }
+            else
+            {
+                slackActionBotName = slackActionBotName.ResolveMergeFields( GetMergeFields( action ) );
             }
 
             var channelBotName = !string.IsNullOrEmpty(slackActionBotName) ? slackActionBotName : null;
 
-            //Get the workflow action bot icon attribute 
+            // get the workflow action bot icon attribute 
             var slackActionBotIcon = GetAttributeValue(action, "BotIcon");
             var slackActionBotIconGuid = slackActionBotIcon.AsGuidOrNull();
             if (slackActionBotIconGuid.HasValue)
             {
-                var slackActionBotIconValue = AttributeCache.Read(slackActionBotIconGuid.Value, rockContext);
-                if (slackActionBotIconValue != null)
-                {
-                    slackActionBotIcon = slackActionBotIconValue.Name;
-                }
+                slackActionBotIcon = action.GetWorklowAttributeValue( slackActionBotIconGuid.Value );
+            }
+            else
+            {
+                slackActionBotIcon = slackActionBotIcon.ResolveMergeFields( GetMergeFields( action ) );
             }
             
             var channelBotIcon = !string.IsNullOrEmpty(slackActionBotIcon) ? slackActionBotIcon : null;
 
-            //Get the workflow message attribute 
+            // get the workflow message attribute 
             string message = GetAttributeValue(action, "Message");
-            Guid messageGuid = message.AsGuid();
-            if (!messageGuid.IsEmpty())
+            var messageGuid = message.AsGuidOrNull();
+            if ( messageGuid.HasValue )
             {
-                var attribute = AttributeCache.Read(messageGuid, rockContext);
-                if (attribute != null)
-                {
-                    string messageAttributeValue = action.GetWorklowAttributeValue(messageGuid);
-                    if (!string.IsNullOrWhiteSpace(messageAttributeValue))
-                    {
-                            message = messageAttributeValue.ResolveMergeFields(mergeFields);
-                    }
-                }
+                message = action.GetWorklowAttributeValue( messageGuid.Value );
+                message = message.Replace( @"\n", @"\\n" ); // fixed new line characters
+            }
+            else
+            {
+                message = message.ResolveMergeFields( GetMergeFields( action ) );
             }
 
             //Get the webhook defined value attribute 
